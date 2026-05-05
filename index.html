@@ -13,9 +13,11 @@
     <meta name="application-name" content="Calculadora Flux">
     <meta name="theme-color" content="#FF6B00">
     
-    <!-- Ícones e Favicons Externos -->
+    <!-- Ícones e Favicons Externos (Safari, GitHub Pages e PWA) -->
     <link rel="apple-touch-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png">
-    <link rel="icon" type="image/png" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png">
+    <link rel="mask-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png" color="#FF6B00">
+    <link rel="shortcut icon" type="image/x-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png">
+    <link rel="icon" type="image/x-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png">
     
     <!-- Fontes do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -680,7 +682,7 @@
 
                 let textToShow = input.value;
                 if (input.type === 'date' && textToShow) {
-                    const [y, m, d] = textToShow.split('-');
+                    const[y, m, d] = textToShow.split('-');
                     textToShow = `${d}/${m}/${y}`; 
                 }
 
