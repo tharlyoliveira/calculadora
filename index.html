@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculadora Flux</title>
+    <title>Calculadora Inteligente Flux</title>
     
     <!-- Configurações de Web App (PWA) / Mobile -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
     <meta name="application-name" content="Calculadora Flux">
     <meta name="theme-color" content="#FF6B00">
     
-    <!-- Ícones e Favicons Externos (Safari, GitHub Pages e PWA) -->
+    <!-- Ícones e Favicons -->
     <link rel="apple-touch-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png">
     <link rel="mask-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png" color="#FF6B00">
     <link rel="shortcut icon" type="image/x-icon" href="https://i.ibb.co/BVX9Z6CX/logo-flux.png">
@@ -24,8 +24,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Biblioteca HTML2Canvas para Exportar Imagem -->
+    <!-- Biblioteca HTML2Canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Mapas Leaflet e Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Tesseract.js (Inteligência Artificial OCR) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         /* ================= Variáveis Base ================= */
@@ -80,24 +89,22 @@
         .input-group { margin-bottom: 16px; }
         label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
         
-        input { 
-            width: 100%; 
-            padding: 12px 16px; 
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            color: var(--black-flux); 
-            background: var(--bg-input); 
-            border: 1px solid var(--border-light); 
-            border-radius: var(--radius-input); 
-            transition: all 0.3s ease; 
-            outline: none; 
-            font-family: 'Inter', sans-serif;
-            box-sizing: border-box;
+        input, select, textarea { 
+            width: 100%; padding: 12px 16px; font-size: 0.95rem; font-weight: 600; color: var(--black-flux); 
+            background: var(--bg-input); border: 1px solid var(--border-light); border-radius: var(--radius-input); 
+            transition: all 0.3s ease; outline: none; font-family: 'Inter', sans-serif; box-sizing: border-box;
         }
-        input:focus { border-color: var(--orange-flux); background: var(--white); box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1); }
+        input:focus, select:focus, textarea:focus { border-color: var(--orange-flux); background: var(--white); box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1); }
         .input-highlight { background: var(--bg-input-blue) !important; border-color: var(--border-focus) !important; color: var(--blue) !important; }
+        
+        .bold-finance { font-weight: 900 !important; font-size: 1.1rem !important; }
 
-        /* Linhas Dinâmicas de Cidades */
+        select {
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto; padding-right: 40px;
+        }
+
         .dynamic-row { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px; align-items: start; background: #fafafa; padding: 15px; border-radius: var(--radius-input); border: 1px dashed var(--border-light); position: relative; transition: 0.3s; }
         .dynamic-row-inputs { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; }
         .btn-add { background: none; border: 1px dashed var(--border-light); color: var(--text-muted); font-size: 0.8rem; font-weight: 600; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: block; width: fit-content; margin-bottom: 20px;}
@@ -105,23 +112,53 @@
         .btn-remove { background: #FFEBEE; color: var(--red); border: none; width: 100%; height: 36px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; font-size: 0.8rem; transition: 0.3s; }
         .btn-remove:hover { background: var(--red); color: white; }
 
-        /* Toggles Switch */
-        .toggle-container { background: var(--bg-input); border: 1px solid var(--border-light); padding: 12px 16px; border-radius: var(--radius-input); display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; transition: 0.3s; }
+        /* Estilo Compacto do Seletor de Eixos (100% Visual) */
+        .axle-compact { display: flex; align-items: center; justify-content: space-between; background: var(--bg-input); border: 1px solid var(--border-light); border-radius: var(--radius-input); padding: 8px 16px; height: 100%; }
+        .axle-compact .btn-axle { background: var(--white); border: 1px solid var(--border-light); color: var(--black-flux); font-size: 1.2rem; font-weight: 900; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .axle-compact .btn-axle:hover { border-color: var(--orange-flux); color: var(--orange-flux); }
+        .axle-display { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.05rem; color: var(--text-main); }
+        .axle-display svg { width: 24px; height: 24px; fill: var(--orange-flux); }
+
+        /* Grade e Cards da ANTT (Design Premium) */
+        .antt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; margin-bottom: 24px; }
+        .antt-card-item {
+            background: var(--white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .antt-card-item label { margin-bottom: 8px; }
+        @media (max-width: 768px) { .antt-grid { grid-template-columns: 1fr; } }
+
+        /* Tabela Comparativa ANTT (Apenas Consulta) */
+        .antt-table-wrapper { border: 1px solid var(--border-light); border-radius: var(--radius-input); overflow: hidden; background: var(--white); }
+        .antt-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .antt-table th, .antt-table td { padding: 10px 15px; border-bottom: 1px solid var(--border-light); text-align: left; }
+        .antt-table th { background: var(--bg-input); color: var(--text-muted); font-weight: 800; text-transform: uppercase; font-size: 0.7rem; }
+        .antt-table tbody tr:last-child td { border-bottom: none; }
+        .antt-table .active-row { background-color: var(--bg-input-blue); font-weight: 800; color: var(--blue); border-left: 4px solid var(--blue); }
+        .antt-table .active-row td:last-child { color: var(--black-flux); }
+
+        /* Toggle Button Padrão */
+        .toggle-container { background: var(--bg-input); border: 1px solid var(--border-light); padding: 12px 16px; border-radius: var(--radius-input); display: flex; align-items: center; justify-content: space-between; transition: 0.3s; height: 100%; }
         .toggle-container label.title { margin: 0; font-size: 0.8rem; color: var(--text-main); text-transform: none; }
         
-        .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; margin: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--orange-flux); }
-        input:checked + .slider:before { transform: translateX(18px); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
         .hidden-input { display: none; width: 110px; margin-left: 15px; animation: fadeIn 0.3s ease; text-align: right; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
         /* ================= Dashboard e DRE ================= */
-        .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
         .summary-card { background: var(--white); border-radius: var(--radius-card); border: 1px solid var(--border-light); padding: 25px; box-shadow: var(--shadow-card); }
         .summary-title { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
         .summary-value { font-size: 1.8rem; font-weight: 800; color: var(--black-flux); margin-bottom: 5px; }
@@ -144,39 +181,10 @@
         .dre-row.red { color: var(--red); }
         .dre-row .val { font-family: monospace; font-size: 1.05rem; }
 
-        /* ================= Estilo Avançado do Banner de Status ================= */
-        .status-banner { 
-            padding: 24px; 
-            border-radius: 12px; 
-            text-align: center; 
-            font-size: 1.2rem; 
-            font-weight: 900; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            transition: all 0.4s ease; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-        }
+        .status-banner { padding: 24px; border-radius: 12px; text-align: center; font-size: 1.2rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.4s ease; display: flex; align-items: center; justify-content: center; }
+        .status-emoji { font-size: 1.6rem; display: inline-flex; align-items: center; margin-right: 12px; }
+        .status-text { font-weight: 900; }
 
-        .status-emoji {
-            font-size: 1.6rem;
-            line-height: 1;
-            display: inline-flex;
-            align-items: center;
-            margin-right: 12px;
-            background: transparent !important;
-            box-shadow: none !important;
-            border: none !important;
-            padding: 0 !important;
-        }
-
-        .status-text {
-            font-weight: 900;
-        }
-
-        /* Cores Atualizadas da Planilha */
         .bg-default { background: var(--border-light); color: var(--text-muted); box-shadow: none; }
         .bg-red-vivid { background: #FF3B30; color: #FFFFFF; box-shadow: 0 4px 20px rgba(255, 59, 48, 0.35); }
         .bg-yellow-alert { background: #FBC02D; color: var(--black-flux); }
@@ -184,10 +192,14 @@
         .bg-lightgreen { background: #90EE90; color: var(--black-flux); }
         .bg-darkgreen { background: #2E7D32; color: #FFFFFF; box-shadow: 0 4px 20px rgba(46, 125, 50, 0.4); }
 
-        /* Botão Compartilhar */
-        .btn-export { background-color: var(--orange-flux); color: var(--white); border: none; padding: 16px 24px; font-size: 1rem; font-weight: 800; border-radius: var(--radius-input); cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255, 107, 0, 0.25); margin-top: 30px; }
-        .btn-export:hover { background-color: #e66000; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 107, 0, 0.4); }
-        .btn-export svg { width: 22px; height: 22px; fill: currentColor; }
+        /* Botões de Exportação */
+        .btn-export { background-color: var(--orange-flux); color: var(--white); border: none; padding: 14px 20px; font-size: 0.95rem; font-weight: 800; border-radius: var(--radius-input); cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .btn-export svg { width: 20px; height: 20px; fill: currentColor; }
+
+        /* Map fixes Leaflet offset */
+        .leaflet-routing-container { display: none !important; }
+        .leaflet-container .custom-marker { box-sizing: content-box !important; }
 
         @media (max-width: 968px) {
             .grid-layout { grid-template-columns: 1fr; }
@@ -195,6 +207,7 @@
             .header-date { text-align: center; }
             .header-title { flex-direction: column; gap: 10px; }
             .header-title img { margin-right: 0 !important; }
+            .summary-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -227,25 +240,39 @@
                 <img src="https://i.ibb.co/BVX9Z6CX/logo-flux.png" crossorigin="anonymous" style="height: 55px; width: auto; margin-right: 15px;" alt="Logotipo">
                 <div>
                     <h1>Calculadora de Frete & Margem</h1>
-                    <p>Sistema de Análise de Rentabilidade Logística</p>
+                    <p>Análise Logística, Roteamento OSRM & Tabela ANTT</p>
                 </div>
             </div>
             <div class="header-date">
-                <p>Dados do Cálculo</p>
+                <p id="labelDataCalc">Dados do Cálculo</p>
                 <h3 id="dataAtual">Carregando...</h3>
             </div>
         </header>
 
         <main class="grid-layout">
             
-            <!-- ESQUERDA: ENTRADAS -->
+            <!-- ESQUERDA: ENTRADAS E PARÂMETROS -->
             <aside class="left-panel">
+                
+                <!-- IMPORTAÇÃO QUALP COM IA -->
+                <div class="card" id="card-import-qualp" style="background: var(--bg-input-blue); border: 2px dashed var(--orange-flux); cursor: pointer; position: relative;">
+                    <div class="card-header" style="color: var(--orange-flux); margin-bottom: 10px; border-bottom: none; padding-bottom: 0; text-align: center; font-size: 1rem;">Upload de Imagem (Print QualP)</div>
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 5px;">
+                        Cole (Ctrl+V) ou clique para enviar a imagem do QualP.<br>A IA extrairá Origem, Destino, Distância, Pedágio e a Tabela de Fretes.
+                    </div>
+                    <input type="file" id="fileImportQualp" accept="image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                    
+                    <div id="ocrStatus" style="display: none; text-align: center; font-weight: 800; font-size: 0.9rem; color: var(--blue); margin-top: 15px; padding: 10px; background: #E3F2FD; border-radius: 8px;">
+                        ⏳ Carregando IA...
+                    </div>
+                </div>
+
                 <div class="card">
-                    <div class="card-header">Entradas de Dados</div>
+                    <div class="card-header">Entradas de Dados da Viagem</div>
                     
                     <div class="input-group">
                         <label>Cliente</label>
-                        <input type="text" placeholder="Nome da empresa...">
+                        <input type="text" id="nomeCliente" placeholder="Nome da empresa...">
                     </div>
 
                     <!-- Origens -->
@@ -258,10 +285,10 @@
                             </div>
                         </div>
                     </div>
-                    <button class="btn-add" onclick="addLinha('origens-container')">+ Adicionar Origem</button>
+                    <button class="btn-add action-btn" onclick="addLinha('origens-container')">+ Adicionar Origem</button>
 
                     <!-- Destinos -->
-                    <div class="input-group" id="destinos-container">
+                    <div class="input-group" id="destinos-container" style="margin-bottom: 5px;">
                         <label>Destino da Carga</label>
                         <div class="dynamic-row">
                             <div class="dynamic-row-inputs">
@@ -270,17 +297,99 @@
                             </div>
                         </div>
                     </div>
-                    <button class="btn-add" onclick="addLinha('destinos-container')">+ Adicionar Destino</button>
+                    
+                    <!-- Exibição de Distância Direta (Ocultável) -->
+                    <div id="distanciaContainer" style="text-align: right; margin-bottom: 20px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">DISTÂNCIA TOTAL: </span>
+                        <span id="distanciaSmall" style="font-size: 1rem; font-weight: 800; color: var(--orange-flux);">---</span>
+                    </div>
 
-                    <!-- Finanças Base -->
+                    <button class="btn-add action-btn" onclick="addLinha('destinos-container')">+ Adicionar Destino</button>
+                </div>
+
+                <!-- BLOCO ESTRUTURAL ANTT REDESENHADO COM CARDS ELEGANTES (CONSULTA OCR) -->
+                <div class="card" id="card-antt">
+                    <div class="card-header" style="color: var(--orange-flux);">Parâmetros Estruturais - Tabela ANTT</div>
+                    
+                    <div class="antt-grid">
+                        <div class="antt-card-item">
+                            <label>Categoria de Carga</label>
+                            <select id="tipoCarga" class="calc-trigger">
+                                <option value="" disabled selected>Selecionar Carga</option>
+                                <option value="conteineirizada">Conteineirizada</option>
+                                <option value="frigorificada">Frigorificada</option>
+                                <option value="geral">Geral</option>
+                                <option value="granel_liquido">Granel Liquido</option>
+                                <option value="granel_solido">Granel Solido</option>
+                                <option value="granel_pressurizada">Granel Pressurizada</option>
+                                <option value="neogranel">Neogranel</option>
+                            </select>
+                        </div>
+
+                        <!-- Eixos 100% Visual e Sem Impacto Matemático -->
+                        <div class="antt-card-item">
+                            <label>Número de Eixos</label>
+                            <div class="axle-compact">
+                                <button type="button" class="btn-axle action-btn" id="btnMinusAxle">-</button>
+                                <div class="axle-display">
+                                    <svg viewBox="0 0 24 24"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm12 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-1-8.5v-2h2.5l2 2.67V10h-4.5z"/></svg>
+                                    <span id="axleCountDisplay">4</span>
+                                </div>
+                                <button type="button" class="btn-axle action-btn" id="btnPlusAxle">+</button>
+                                <input type="hidden" id="numEixos" value="4">
+                            </div>
+                        </div>
+
+                        <div class="antt-card-item">
+                            <label style="margin-bottom: 10px;">Retorno Vazio?</label>
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                <span style="font-size: 0.8rem; color: var(--text-main); font-weight: 600;">Estado do Cálculo</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="tVazio" class="calc-trigger">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="antt-card-item" style="background: var(--bg-input-blue); border-color: var(--border-focus); text-align: center;">
+                            <div style="font-size: 0.75rem; font-weight: 800; color: var(--blue); text-transform: uppercase;">Piso Mínimo Atual</div>
+                            <div id="valPisoANTT" style="font-size: 1.6rem; font-weight: 900; color: var(--black-flux); margin-top: 5px;">R$ 0,00</div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela Dinâmica Comparativa ANTT (Apenas Consulta) -->
+                    <div class="antt-table-wrapper">
+                        <table class="antt-table" id="tabelaComparativa">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th style="text-align: right;">Valor do Piso (R$)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Gerado via JS pela extração de OCR -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BLOCO FINANCEIRO DESTACADO -->
+                <div class="card" id="dados-financeiros">
+                    <div class="card-header">Entrada de Dados Financeiro</div>
                     <div class="input-group">
                         <label>Valor da Carga (NF) - R$</label>
-                        <input type="text" id="vCarga" class="money-mask calc-trigger" placeholder="0,00">
+                        <input type="text" id="vCarga" class="money-mask calc-trigger bold-finance" placeholder="0,00">
                     </div>
                     <div class="input-group">
                         <label>Valor do Frete (Receita) - R$</label>
-                        <input type="text" id="vFrete" class="money-mask calc-trigger input-highlight" placeholder="0,00">
+                        <input type="text" id="vFrete" class="money-mask calc-trigger input-highlight bold-finance" placeholder="0,00">
                     </div>
+                </div>
+
+                <!-- DADOS INTERNOS OCULTÁVEIS (Repasse, Custos) -->
+                <div class="card" id="dados-internos">
+                    <div class="card-header">Custos Operacionais & Fechamento</div>
+                    
                     <div class="input-group">
                         <label>Repasse ao Veículo - R$</label>
                         <input type="text" id="vRepasse" class="money-mask calc-trigger" placeholder="0,00">
@@ -292,7 +401,6 @@
 
                     <div style="height: 1px; background: var(--border-light); margin: 24px 0;"></div>
 
-                    <!-- Toggles Avançados -->
                     <div class="toggle-container">
                         <label class="title"><b>Capital de Giro (%)</b></label>
                         <div style="display: flex; align-items: center;">
@@ -326,12 +434,13 @@
                         </div>
                     </div>
                 </div>
+
             </aside>
 
-            <!-- DIREITA: RESULTADOS E DRE -->
+            <!-- DIREITA: RESULTADOS, DRE E MAPA -->
             <section class="right-panel">
                 
-                <div class="summary-grid">
+                <div class="summary-grid" id="summary-cards">
                     <div class="summary-card">
                         <div class="summary-title">Lucro Bruto</div>
                         <div class="summary-value" id="cardBrutoVal">R$ 0,00</div>
@@ -344,7 +453,7 @@
                     </div>
                 </div>
 
-                <div class="card" style="margin-bottom: 0;">
+                <div class="card" id="dre-card">
                     <div class="dre-header">
                         <h2>Detalhamento da Operação</h2>
                         <span class="dre-badge">ANALÍTICO</span>
@@ -394,13 +503,27 @@
                     </div>
                 </div>
 
-                <!-- Botão Exportação -->
-                <button class="btn-export" onclick="exportarImagem()">
-                    <svg viewBox="0 0 256 256">
-                        <path d="M224,72H185.34l-11.45-19.09A15.93,15.93,0,0,0,160.18,48H95.82a15.93,15.93,0,0,0-13.71,7.91L70.66,72H32A16,16,0,0,0,16,88V200a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V88A16,16,0,0,0,224,72ZM128,184a48,48,0,1,1,48-48A48.05,48.05,0,0,1,128,184Zm0-80a32,32,0,1,0,32,32A32,32,0,0,0,128,104Z"></path>
-                    </svg>
-                    Compartilhar Operação
-                </button>
+                <!-- CARD MAPA (Altura Aumentada) -->
+                <div class="card" id="map-card" style="padding: 20px;">
+                    <div class="card-header" style="margin-bottom: 12px; font-size: 0.8rem;">Geolocalização & Rota Inteligente</div>
+                    <div id="map" style="height: 335px; border-radius: 8px; z-index: 1;"></div>
+                </div>
+
+                <!-- Botões de Ação Dinâmicos -->
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;" id="action-buttons-group">
+                    <button class="btn-export action-btn" onclick="exportarImagem('interno')" style="background-color: var(--gray-blue);">
+                        <svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+                        Compartilhar Análise (Interno)
+                    </button>
+                    <button class="btn-export action-btn" onclick="exportarImagem('cliente')" style="background-color: var(--blue);">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                        Gerar Orçamento Limpo (Cliente)
+                    </button>
+                    <button class="btn-export action-btn" onclick="exportarTextoWhatsApp()" style="background-color: var(--green);">
+                        <svg viewBox="0 0 24 24"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V5h10v14z"/><path d="M11 20h2v-2h-2v2z"/></svg>
+                        Copiar Orçamento Padrão WhatsApp
+                    </button>
+                </div>
 
             </section>
         </main>
@@ -410,74 +533,259 @@
         // ================= SISTEMA DE LOGIN =================
         function verificarSenha() {
             const senha = document.getElementById('senhaInput').value;
-            // Senha atualizada conforme requisição
             if (senha === 'f03') {
                 document.getElementById('loginOverlay').style.display = 'none';
+                if (map) {
+                    setTimeout(() => map.invalidateSize(), 300);
+                }
             } else {
                 document.getElementById('senhaError').style.display = 'block';
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initMap();
             const input = document.getElementById('senhaInput');
             if (input) {
                 input.addEventListener('keypress', function (e) {
-                    if (e.key === 'Enter') {
-                        verificarSenha();
-                    }
+                    if (e.key === 'Enter') verificarSenha();
                 });
             }
+
+            // Seleção Compacta de Eixos (APENAS VISUAL E CONSULTA, NÃO MEXE EM RECEITA)
+            const btnMinus = document.getElementById('btnMinusAxle');
+            const btnPlus = document.getElementById('btnPlusAxle');
+            const axleDisplay = document.getElementById('axleCountDisplay');
+            const numEixos = document.getElementById('numEixos');
+
+            btnMinus.addEventListener('click', () => {
+                let val = parseInt(numEixos.value);
+                if (val > 2) { val--; numEixos.value = val; axleDisplay.innerText = val; }
+            });
+            btnPlus.addEventListener('click', () => {
+                let val = parseInt(numEixos.value);
+                if (val < 9) { val++; numEixos.value = val; axleDisplay.innerText = val; }
+            });
         });
 
         // ================= 1. DATA ATUAL =================
         document.getElementById('dataAtual').innerText = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
+        // ================= BANCO DE DADOS EXTRAÍDO (OCR) =================
+        // Em vez de calcular, o sistema guarda o que a IA leu na imagem.
+        let extractedPisos = {
+            "conteineirizada": 0,
+            "frigorificada": 0,
+            "geral": 0,
+            "granel_liquido": 0,
+            "granel_solido": 0,
+            "granel_pressurizada": 0,
+            "neogranel": 0
+        };
+
+        const nomesCategorias = {
+            "conteineirizada": "Conteineirizada",
+            "frigorificada": "Frigorificada",
+            "geral": "Geral",
+            "granel_liquido": "Granel Liquido",
+            "granel_solido": "Granel Solido",
+            "granel_pressurizada": "Granel Pressurizada",
+            "neogranel": "Neogranel"
+        };
+
+        // ================= INTEGRAÇÃO DE IA (TESSERACT.JS / OCR) =================
+        let ocrDistanceFound = false; // Flag de TRAVA MÁXIMA para priorizar a distância do print OCR
+
+        document.addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    processarImagemOCR(blob);
+                }
+            }
+        });
+
+        document.getElementById('fileImportQualp').addEventListener('change', function(e) {
+            if(e.target.files && e.target.files[0]) {
+                processarImagemOCR(e.target.files[0]);
+            }
+        });
+
+        async function processarImagemOCR(file) {
+            const statusEl = document.getElementById('ocrStatus');
+            statusEl.innerText = '⏳ Carregando IA de Visão Computacional... (Pode demorar na 1ª vez)';
+            statusEl.style.display = 'block';
+
+            try {
+                const result = await Tesseract.recognize(file, 'por', {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            statusEl.innerText = `⏳ Escaneando Imagem: ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                });
+                
+                parseOCRText(result.data.text);
+                
+                statusEl.innerText = '✅ Extração concluída com sucesso!';
+                setTimeout(() => statusEl.style.display = 'none', 5000);
+            } catch(error) {
+                statusEl.innerText = '❌ Falha ao escanear a imagem. Tente novamente.';
+                console.error(error);
+                setTimeout(() => statusEl.style.display = 'none', 5000);
+            }
+        }
+
+        function parseOCRText(text) {
+            const cleanText = text.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+
+            // 1. Extração de Retorno Vazio 
+            const retornoMatch = cleanText.match(/C[aá]lculo\s+(COM|SEM)/i) || cleanText.match(/(COM|SEM)\s+retorno/i);
+            if (retornoMatch) {
+                const isCom = (retornoMatch[1].toUpperCase() === 'COM');
+                document.getElementById('tVazio').checked = isCom;
+            }
+
+            // 2. Extração de Pedágio
+            const pedMatch = cleanText.match(/Ped[aá]gio[^\dRS$]*(?:RS|R\$)?\s*([\d.,]+)/i) || cleanText.match(/Custo[^\dRS$]*(?:RS|R\$)?\s*([\d.,]+)/i) || cleanText.match(/(?:RS|R\$)\s*([\d.,]+)/i);
+            if (pedMatch) {
+                const pureNum = pedMatch[1].replace(/[^\d]/g, ''); 
+                const inputPed = document.getElementById('vPedagio');
+                inputPed.value = pureNum;
+                aplicarMascaraDinheiro({target: inputPed});
+            }
+
+            // 3. Extração da Distância (Prioridade Total da Imagem sobrepondo Leaflet)
+            const distMatch = cleanText.match(/Dist[aâá]ncia[^\d]*([\d.,]+)\s*km/i) || cleanText.match(/Total.*?([\d.,]+)\s*km/i) || cleanText.match(/([\d.,]+)\s*km/i) || cleanText.match(/(\d{2,4})\s*km/i);
+            if (distMatch) {
+                let rawDist = distMatch[1];
+                if (rawDist.includes('.') && rawDist.includes(',')) {
+                    rawDist = rawDist.replace(/\./g, '').replace(',', '.');
+                } else if (rawDist.includes(',')) {
+                    rawDist = rawDist.replace(',', '.');
+                }
+                
+                let dist = parseFloat(rawDist);
+                if (!isNaN(dist)) {
+                    routeDistanceKm = dist;
+                    ocrDistanceFound = true; // Trava a rota para não sobrescrever pelo Leaflet de jeito nenhum
+                    let distFormatted = Math.round(dist).toLocaleString('pt-BR');
+                    document.getElementById('distanciaSmall').innerText = distFormatted + " Km";
+                }
+            }
+
+            // 4. Extração de Origem e Destino
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+            const cityLines = lines.filter(l => l.includes('/'));
+            let foundCities =[];
+            
+            for(let line of cityLines) {
+                 let parts = line.split('/');
+                 if(parts.length >= 2) {
+                     let cityName = parts[0].trim();
+                     let normalizedSearch = normalizar(cityName);
+                     let matches = cidadesBr.filter(c => normalizar(c).split(' - ')[0] === normalizedSearch);
+                     
+                     if(matches.length > 0) {
+                         foundCities.push(matches[0]);
+                     } else {
+                         foundCities.push(cityName); 
+                     }
+                 }
+            }
+
+            if(foundCities.length >= 1) {
+                document.querySelector('#origens-container .city-input').value = foundCities[0];
+            }
+            if(foundCities.length >= 2) {
+                document.querySelector('#destinos-container .city-input').value = foundCities[1];
+                checkAndRoute(); 
+            }
+
+            // 5. Extração da Tabela Completa (CONSULTA OCR)
+            const categoryPatterns =[
+                { key: 'conteineirizada', regex: /Contein[e]?irizada.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i },
+                { key: 'frigorificada', regex: /Frigorificada.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i },
+                { key: 'geral', regex: /Geral.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i }, 
+                { key: 'granel_liquido', regex: /Granel\s+L[íi]quido.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i },
+                { key: 'granel_solido', regex: /Granel\s+S[óo]lido.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i },
+                { key: 'granel_pressurizada', regex: /Granel\s+Pressurizada.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i },
+                { key: 'neogranel', regex: /Neogranel.{0,50}?([\d]{1,3}(?:\.[\d]{3})*,\d{2})/i }
+            ];
+
+            for (let pat of categoryPatterns) {
+                let match = cleanText.match(pat.regex);
+                if (match) {
+                    let valStr = match[1].replace(/\./g, '').replace(',', '.');
+                    extractedPisos[pat.key] = parseFloat(valStr);
+                }
+            }
+
+            // Dispara a montagem visual e cálculos financeiros instantaneamente
+            atualizarTabelaConsulta();
+            calcularMargem();
+        }
+
+        // Função exclusiva para desenhar a tabela consultada da imagem
+        function atualizarTabelaConsulta() {
+            const tipoAtual = document.getElementById('tipoCarga').value;
+            const tbody = document.querySelector('#tabelaComparativa tbody');
+            tbody.innerHTML = ''; 
+            
+            let pisoMinimoPrincipal = 0;
+            if(tipoAtual && extractedPisos[tipoAtual]) {
+                pisoMinimoPrincipal = extractedPisos[tipoAtual];
+            }
+
+            for (let key in nomesCategorias) {
+                let pisoLido = extractedPisos[key] || 0;
+                
+                const tr = document.createElement('tr');
+                if (key === tipoAtual && tipoAtual !== "") tr.className = 'active-row';
+                
+                tr.innerHTML = `
+                    <td>${nomesCategorias[key]}</td>
+                    <td style="text-align: right;">${pisoLido > 0 ? formatBRL(pisoLido) : '---'}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+            
+            document.getElementById('valPisoANTT').innerText = pisoMinimoPrincipal > 0 ? formatBRL(pisoMinimoPrincipal) : 'R$ 0,00';
+            
+            const repasse = numDinheiro(document.getElementById('vRepasse').value);
+            const isUnderANTT = (repasse > 0 && pisoMinimoPrincipal > 0 && repasse < pisoMinimoPrincipal);
+            document.getElementById('valPisoANTT').style.color = isUnderANTT ? "var(--red)" : "var(--black-flux)";
+        }
+
+
         // ================= 2. CIDADES: API OFICIAL DO IBGE =================
         let cidadesBr =[];
-
         async function carregarCidadesAPI() {
             try {
                 const cidadesEmCache = localStorage.getItem('flux_cidades_ibge');
-                if (cidadesEmCache) {
-                    cidadesBr = JSON.parse(cidadesEmCache);
-                    return;
-                }
-
+                if (cidadesEmCache) { cidadesBr = JSON.parse(cidadesEmCache); return; }
                 const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome');
-                if (!response.ok) throw new Error('Falha HTTP na API do IBGE');
+                if (!response.ok) throw new Error('Falha HTTP');
                 const data = await response.json();
-                
                 cidadesBr = data.map(c => {
                     const uf = c.microrregiao?.mesorregiao?.UF?.sigla || '';
                     return uf ? `${c.nome} - ${uf}` : c.nome;
                 });
-                
-                try {
-                    localStorage.setItem('flux_cidades_ibge', JSON.stringify(cidadesBr));
-                } catch (e) {
-                    console.warn("Aviso: Limite de cota do localStorage atingido.");
-                }
-            } catch (error) {
-                console.warn("Aviso: Falha ao carregar cidades.", error);
-            }
+                try { localStorage.setItem('flux_cidades_ibge', JSON.stringify(cidadesBr)); } catch (e) { }
+            } catch (error) {}
         }
-
         carregarCidadesAPI();
 
-        const normalizar = (str) => {
-            if (!str) return "";
-            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        };
+        const normalizar = (str) => str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : "";
 
         function handleCitySearch(input) {
             const termo = normalizar(input.value);
             if (termo.length < 3) return;
-
             const datalist = document.getElementById('cidades-ibge-dinamico');
             datalist.innerHTML = ''; 
-
-            const matches = cidadesBr.filter(cidadeCorrente => normalizar(cidadeCorrente).includes(termo)).slice(0, 30);
-            
+            const matches = cidadesBr.filter(c => normalizar(c).includes(termo)).slice(0, 30);
             matches.forEach(match => {
                 const option = document.createElement('option');
                 option.value = match;
@@ -494,12 +802,106 @@
                     <input type="text" class="city-input" placeholder="Buscar cidade..." list="cidades-ibge-dinamico" oninput="handleCitySearch(this)">
                     <input type="date" class="date-input">
                 </div>
-                <button class="btn-remove" onclick="this.parentElement.remove()">Remover Parada</button>
+                <button class="btn-remove action-btn" onclick="this.parentElement.remove(); checkAndRoute();">Remover Parada</button>
             `;
             container.appendChild(row);
         }
 
-        // ================= 3. MÁSCARAS E EVENTOS =================
+        // ================= 3. MOTOR DE MAPA E ROTA OSRM (LEAFLET) =================
+        let map;
+        let routingControl;
+        let lastCitiesStr = "";
+        let debounceTimer;
+
+        function initMap() {
+            map = L.map('map', { zoomControl: false }).setView([-14.235, -51.9253], 4);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap', maxZoom: 18,
+            }).addTo(map);
+        }
+
+        function formatCityForGeocode(cityString) { return cityString ? cityString.replace(' - ', ', ') + ', Brasil' : ""; }
+
+        function checkAndRoute() {
+            const originInputs = document.querySelectorAll('#origens-container .city-input');
+            const destInputs = document.querySelectorAll('#destinos-container .city-input');
+            let cities =[];
+            originInputs.forEach(inp => { if(inp.value.trim().length > 3) cities.push(inp.value.trim()); });
+            destInputs.forEach(inp => { if(inp.value.trim().length > 3) cities.push(inp.value.trim()); });
+            
+            let currentCitiesStr = cities.join('|');
+            if (cities.length >= 2 && currentCitiesStr !== lastCitiesStr) {
+                lastCitiesStr = currentCitiesStr; 
+                updateRoute(cities);
+            }
+        }
+
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('city-input')) {
+                ocrDistanceFound = false; // Se o usuário digitar algo na mão, destrava o OCR e deixa o mapa calcular
+                clearTimeout(debounceTimer); debounceTimer = setTimeout(checkAndRoute, 600);
+            }
+        });
+
+        async function updateRoute(cities) {
+            if (!ocrDistanceFound) document.getElementById('distanciaSmall').innerText = "Calculando...";
+            let waypoints =[];
+            for (let city of cities) {
+                let cacheKey = 'coord_' + city;
+                let cached = localStorage.getItem(cacheKey);
+                if (cached) {
+                    let p = JSON.parse(cached); waypoints.push(L.latLng(p.lat, p.lng));
+                } else {
+                    try {
+                        let query = formatCityForGeocode(city);
+                        let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                        let data = await res.json();
+                        if (data && data.length > 0) {
+                            let lat = parseFloat(data[0].lat); let lng = parseFloat(data[0].lon);
+                            waypoints.push(L.latLng(lat, lng));
+                            localStorage.setItem(cacheKey, JSON.stringify({lat, lng}));
+                        }
+                        await new Promise(r => setTimeout(r, 1100)); 
+                    } catch (e) { }
+                }
+            }
+            
+            if (waypoints.length >= 2) {
+                if (routingControl) map.removeControl(routingControl);
+                routingControl = L.Routing.control({
+                    waypoints: waypoints, routeWhileDragging: false, addWaypoints: false, show: false, 
+                    lineOptions: { styles:[{color: '#FF6B00', weight: 4}] },
+                    createMarker: function(i, wp, nWps) {
+                        let color = i === 0 ? '#43A047' : (i === nWps - 1 ? '#E53935' : '#1976D2');
+                        return L.marker(wp.latLng, {
+                            icon: L.divIcon({
+                                className: 'custom-marker',
+                                html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.4);"></div>`,
+                                iconSize:[14, 14], iconAnchor:[7, 7]
+                            })
+                        });
+                    }
+                }).addTo(map);
+
+                routingControl.on('routesfound', function(e) {
+                    let routes = e.routes;
+                    // Proteção OCR: O Mapa não subscreve o dado extraído da Imagem
+                    if (!ocrDistanceFound) {
+                        let calcDist = routes[0].summary.totalDistance / 1000;
+                        document.getElementById('distanciaSmall').innerText = Math.round(calcDist).toLocaleString('pt-BR') + " Km";
+                    }
+                    let bounds = L.latLngBounds(waypoints);
+                    map.fitBounds(bounds, { padding:[30, 30] });
+                });
+                routingControl.on('routingerror', function(e) { 
+                    if (!ocrDistanceFound) document.getElementById('distanciaSmall').innerText = "Erro Servidor"; 
+                });
+            } else {
+                if (!ocrDistanceFound) document.getElementById('distanciaSmall').innerText = "Não Localizada";
+            }
+        }
+
+        // ================= 4. MÁSCARAS E MOTOR FINANCEIRO =================
         function aplicarMascaraDinheiro(e) {
             let value = e.target.value.replace(/\D/g, ""); 
             if (value === "") { e.target.value = ""; return; }
@@ -527,7 +929,6 @@
             const checkEl = document.getElementById(t.check);
             const inputEl = document.getElementById(t.input);
             const dreRowEl = document.getElementById(t.dreRow);
-            
             dreRowEl.style.display = 'none';
 
             checkEl.addEventListener('change', function() {
@@ -538,7 +939,6 @@
             });
         });
 
-        // ================= 4. MOTOR FINANCEIRO =================
         function calcularMargem() {
             const carga = numDinheiro(document.getElementById('vCarga').value);
             const frete = numDinheiro(document.getElementById('vFrete').value);
@@ -558,7 +958,6 @@
             const valSeguro = carga * taxaSeguro;          
             const valCapGiro = repasse * (pCapGiro / 100); 
             
-            // Cálculo dinâmico do percentual do repasse sobre a receita bruta (frete)
             const percRepasse = frete > 0 ? (repasse / frete) * 100 : 0;
 
             const lucroBruto = frete - repasse - pedagio;
@@ -570,10 +969,8 @@
 
             document.getElementById('cardBrutoVal').innerText = formatBRL(lucroBruto);
             document.getElementById('cardBrutoPerc').innerText = formatPerc(percBruto);
-
             document.getElementById('cardLiquidoVal').innerText = formatBRL(lucroLiquido);
             document.getElementById('cardLiquidoPerc').innerText = formatPerc(percLiquido);
-
             document.getElementById('dreFrete').innerText = formatBRL(frete);
             document.getElementById('dreImposto').innerText = `- ${formatBRL(valImposto)}`;
             
@@ -620,85 +1017,105 @@
                 banner.innerHTML = '<span class="status-emoji">🚀</span> <span class="status-text">FECHA URGENTE!!!!</span>';
                 badgeLiq.className = 'summary-perc badge-green';
             }
+
+            // Atualiza apenas a visão visual da tabela (sem recálculo de fórmulas)
+            atualizarTabelaConsulta();
         }
 
-        document.querySelectorAll('.calc-trigger:not(.money-mask)').forEach(el => el.addEventListener('input', calcularMargem));
+        // Todos os Triggers Visuais (Apenas recarregam Interface e Valores)
+        document.querySelectorAll('.calc-trigger').forEach(el => el.addEventListener('input', calcularMargem));
+        document.querySelectorAll('.calc-trigger').forEach(el => el.addEventListener('change', calcularMargem));
         calcularMargem();
 
-        // ================= 5. EXPORTAÇÃO (IMAGEM FIEL E HTML2CANVAS OTIMIZADO) =================
-        async function exportarImagem() {
+        // ================= 5. SISTEMAS DE EXPORTAÇÃO (IMAGEM E TEXTO) =================
+        async function exportarImagem(modo) {
             window.scrollTo(0, 0);
 
-            const btn = document.querySelector('.btn-export');
-            const originalText = btn.innerHTML;
-            
-            // Ocultar TODOS os botões da página aplicando explicitamente 'display: none !important'
-            const actionButtons = document.querySelectorAll('.btn-remove, .btn-add, .btn-export');
+            const actionButtons = document.querySelectorAll('.action-btn, #action-buttons-group');
             actionButtons.forEach(b => {
                 b.dataset.originalDisplay = window.getComputedStyle(b).display;
                 b.style.setProperty('display', 'none', 'important');
             });
 
-            const inputs = Array.from(document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]'));
+            const isClient = (modo === 'cliente');
+            const layoutGrid = document.querySelector('.grid-layout');
+            const originalGrid = layoutGrid.style.gridTemplateColumns;
+            
+            const mainTitle = document.querySelector('.header-title h1');
+            const dateLabel = document.getElementById('labelDataCalc');
+
+            if (isClient) {
+                document.getElementById('card-import-qualp').style.display = 'none';
+                document.getElementById('card-antt').style.display = 'none';
+                document.getElementById('dados-internos').style.display = 'none';
+                document.getElementById('summary-cards').style.display = 'none';
+                document.getElementById('dre-card').style.display = 'none';
+                document.getElementById('distanciaContainer').style.display = 'none'; 
+                document.getElementById('nomeCliente').closest('.input-group').style.display = 'none';
+                
+                mainTitle.dataset.origText = mainTitle.innerText;
+                mainTitle.innerText = 'ORÇAMENTO DE FRETE - FLUX TRANSPORTES';
+                dateLabel.dataset.origText = dateLabel.innerText;
+                dateLabel.innerText = 'DATA DA COTAÇÃO';
+
+                layoutGrid.style.gridTemplateColumns = '1fr'; 
+            }
+
+            const inputs = Array.from(document.querySelectorAll('input[type="text"]:not(#senhaInput), input[type="number"], input[type="date"], select, textarea'));
             const mimics =[];
 
             inputs.forEach(input => {
-                if (window.getComputedStyle(input).display === 'none') return;
+                if (window.getComputedStyle(input).display === 'none' && !input.classList.contains('hidden-input')) return;
 
                 const mimic = document.createElement('div');
-                
-                mimic.style.display = 'flex';
-                mimic.style.alignItems = 'center';
-                mimic.style.width = '100%'; 
-                mimic.style.minHeight = '44px';
-                mimic.style.padding = '12px 16px';
-                mimic.style.fontSize = '0.95rem';
-                mimic.style.fontWeight = '600'; 
-                mimic.style.fontFamily = "'Inter', sans-serif";
-                mimic.style.boxSizing = 'border-box';
-                mimic.style.overflow = 'hidden';
-                mimic.style.whiteSpace = 'nowrap';
-                mimic.style.textOverflow = 'ellipsis';
-                mimic.style.borderRadius = '8px';
-                
-                mimic.style.backgroundColor = '#FAFAFA'; 
-                mimic.style.border = '1px solid #EBEBEB';
-                mimic.style.color = '#1A1A1A';
+                mimic.style.display = 'flex'; mimic.style.alignItems = 'center'; mimic.style.width = '100%'; 
+                mimic.style.minHeight = '44px'; mimic.style.padding = '12px 16px';
+                mimic.style.fontSize = '0.95rem'; mimic.style.fontWeight = '600'; 
+                mimic.style.fontFamily = "'Inter', sans-serif"; mimic.style.boxSizing = 'border-box';
+                mimic.style.overflow = 'hidden'; mimic.style.whiteSpace = 'nowrap'; mimic.style.textOverflow = 'ellipsis';
+                mimic.style.borderRadius = '8px'; mimic.style.backgroundColor = '#FAFAFA'; 
+                mimic.style.border = '1px solid #EBEBEB'; mimic.style.color = '#1A1A1A';
 
                 if (input.classList.contains('input-highlight')) {
-                    mimic.style.backgroundColor = '#EEF2FF';
-                    mimic.style.border = '1px solid #C7D2FE';
-                    mimic.style.color = '#1976D2';
+                    mimic.style.backgroundColor = '#EEF2FF'; mimic.style.border = '1px solid #C7D2FE'; mimic.style.color = '#1976D2';
                 }
 
                 if (input.classList.contains('hidden-input')) {
-                    mimic.style.justifyContent = 'flex-end';
-                    mimic.style.width = '110px';
-                    mimic.style.marginLeft = '15px';
+                    mimic.style.justifyContent = 'flex-end'; mimic.style.width = '110px'; mimic.style.marginLeft = '15px';
                 } else {
-                    // Força a margem inferior rigorosa de 18px em todos os campos normais capturados
                     mimic.style.setProperty('margin-bottom', '18px', 'important');
                 }
 
+                // Super Destaque Financeiro no Orçamento de Imagem do Cliente
+                if ((input.id === 'vCarga' || input.id === 'vFrete') && isClient) {
+                    mimic.style.fontSize = '1.3rem';
+                    mimic.style.fontWeight = '900';
+                    mimic.style.padding = '18px 24px';
+                    mimic.style.color = input.id === 'vFrete' ? 'var(--orange-flux)' : 'var(--black-flux)';
+                    if (input.id === 'vFrete') {
+                        mimic.style.backgroundColor = '#FFF0E6';
+                        mimic.style.borderColor = '#FFD0B3';
+                    }
+                }
+
                 let textToShow = input.value;
-                if (input.type === 'date' && textToShow) {
-                    const[y, m, d] = textToShow.split('-');
-                    textToShow = `${d}/${m}/${y}`; 
+                if (input.tagName === 'SELECT') { 
+                    if(input.selectedIndex >= 0) textToShow = input.options[input.selectedIndex].text;
+                } 
+                else if (input.type === 'date' && textToShow) {
+                    const[y, m, d] = textToShow.split('-'); textToShow = `${d}/${m}/${y}`; 
                 }
 
                 if (!textToShow) {
-                    textToShow = input.placeholder || '';
-                    mimic.style.color = '#A0AAB5';
-                    mimic.style.fontWeight = '500';
+                    textToShow = input.placeholder || ''; mimic.style.color = '#A0AAB5'; mimic.style.fontWeight = '500';
                 }
-
                 mimic.innerText = textToShow;
 
-                input.parentNode.insertBefore(mimic, input);
-                mimics.push({ mimic: mimic, input: input, originalDisplay: input.style.display });
-                
-                // Esconder rigorosamente o input real
-                input.style.setProperty('display', 'none', 'important');
+                if (window.getComputedStyle(input.parentNode).display !== 'none') {
+                    input.parentNode.insertBefore(mimic, input);
+                    mimics.push({ mimic: mimic, input: input, originalDisplay: input.style.display });
+                    input.style.setProperty('display', 'none', 'important');
+                }
             });
 
             const container = document.getElementById('capture-container');
@@ -706,48 +1123,69 @@
             container.style.padding = '30px'; 
 
             try {
-                // Atraso de 500ms exigido para estabilização perfeita dos overrides CSS e do layout sem os botões
-                await new Promise(resolve => setTimeout(resolve, 500)); 
-
+                await new Promise(resolve => setTimeout(resolve, 600)); 
+                
                 const canvas = await html2canvas(container, {
-                    scale: 2,  
-                    useCORS: true, 
-                    allowTaint: false,
-                    backgroundColor: '#F4F7F8', 
-                    logging: false,
-                    windowWidth: container.scrollWidth,
-                    windowHeight: container.scrollHeight
+                    scale: 2, useCORS: true, allowTaint: false, backgroundColor: '#F4F7F8', 
+                    logging: false, windowWidth: container.scrollWidth, windowHeight: container.scrollHeight
                 });
 
                 const data = new Date();
-                const dia = String(data.getDate()).padStart(2, '0');
-                const mes = String(data.getMonth() + 1).padStart(2, '0');
-                const filename = `Flux_Operacao_${dia}_${mes}_${data.getFullYear()}.png`;
+                const dForm = `${String(data.getDate()).padStart(2, '0')}_${String(data.getMonth()+1).padStart(2, '0')}`;
+                const fileSuf = isClient ? 'Orcamento_Limpo' : 'Operacao_Interno';
+                const filename = `Flux_${fileSuf}_${dForm}.png`;
 
                 const link = document.createElement('a');
                 link.download = filename;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                
             } catch (err) {
-                console.error('Erro na exportação:', err);
-                alert('Ocorreu um erro ao gerar a imagem da operação. Tente novamente.');
+                alert('Ocorreu um erro ao gerar a imagem.');
             } finally {
-                // Restaurar visuais após o print
                 container.style.padding = paddingOriginal;
+                layoutGrid.style.gridTemplateColumns = originalGrid;
                 
-                mimics.forEach(item => {
-                    item.mimic.remove();
-                    item.input.style.display = item.originalDisplay; 
-                });
-                
-                // Restaurar visibilidade e exibição na interface
-                actionButtons.forEach(b => {
-                    b.style.display = b.dataset.originalDisplay || '';
-                });
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                if (isClient) {
+                    document.getElementById('card-import-qualp').style.display = '';
+                    document.getElementById('card-antt').style.display = '';
+                    document.getElementById('dados-internos').style.display = '';
+                    document.getElementById('summary-cards').style.display = 'grid';
+                    document.getElementById('dre-card').style.display = '';
+                    document.getElementById('distanciaContainer').style.display = '';
+                    document.getElementById('nomeCliente').closest('.input-group').style.display = '';
+
+                    if (mainTitle.dataset.origText) mainTitle.innerText = mainTitle.dataset.origText;
+                    if (dateLabel.dataset.origText) dateLabel.innerText = dateLabel.dataset.origText;
+                }
+
+                mimics.forEach(item => { item.mimic.remove(); item.input.style.display = item.originalDisplay; });
+                actionButtons.forEach(b => { b.style.display = b.dataset.originalDisplay || ''; });
             }
+        }
+
+        // WhatsApp Export 
+        function exportarTextoWhatsApp() {
+            const origens = Array.from(document.querySelectorAll('#origens-container .city-input')).map(i => i.value).filter(v => v).join(', ');
+            const destinos = Array.from(document.querySelectorAll('#destinos-container .city-input')).map(i => i.value).filter(v => v).join(', ');
+            
+            const datasOrigem = Array.from(document.querySelectorAll('#origens-container .date-input')).map(i => {
+                if(!i.value) return '';
+                const[y,m,d] = i.value.split('-'); return `${d}/${m}/${y}`;
+            }).filter(v => v).join(', ');
+            
+            const tipoCargaSelect = document.getElementById('tipoCarga');
+            const tipoCargaText = tipoCargaSelect.options[tipoCargaSelect.selectedIndex]?.text || 'A Definir';
+
+            const vCarga = document.getElementById('vCarga').value || '0,00';
+            const vFrete = document.getElementById('vFrete').value || '0,00';
+
+            const texto = `📄 PROPOSTA DE ORÇAMENTO - FLUX\n\n📍 *Rota:* ${origens} ➔ ${destinos}\n📅 *Coleta:* ${datasOrigem || 'A combinar'}\n📦 *Carga:* ${tipoCargaText}\n💰 *Valor est NF:* R$ ${vCarga}\n\n🚚 VALOR DO FRETE: R$ ${vFrete}\n\nAtenciosamente, *Flux*.`;
+
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('Orçamento copiado para a área de transferência! Cole no WhatsApp.');
+            }).catch(() => {
+                alert('Falha ao copiar texto. Verifique as permissões.');
+            });
         }
     </script>
 </body>
